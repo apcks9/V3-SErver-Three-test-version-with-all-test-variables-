@@ -1,0 +1,38 @@
+{
+  "name": "multiai-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Multi-AI Browser with Stripe payments and MongoDB",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:test": "NODE_ENV=development node src/server.js",
+    "start:prod": "NODE_ENV=production node -r dotenv/config src/server.js dotenv_config_path=.env.production",
+    "dev": "nodemon src/server.js",
+    "dev:test": "NODE_ENV=development nodemon src/server.js",
+    "dev:prod": "NODE_ENV=production nodemon -r dotenv/config src/server.js dotenv_config_path=.env.production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "stripe",
+    "mongodb",
+    "payments",
+    "subscriptions"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.0.3",
+    "stripe": "^14.9.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
