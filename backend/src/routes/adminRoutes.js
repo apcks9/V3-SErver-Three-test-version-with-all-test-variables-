@@ -33,4 +33,8 @@ router.get('/analytics/subscription-distribution', adminController.getSubscripti
 router.get('/analytics/revenue', adminController.getRevenueAnalytics);
 router.get('/analytics/plan-distribution', adminController.getPlanDistribution);
 
+// Event logs for debugging
+router.get('/events', adminController.getEventLogs);
+router.get('/events/stats', adminController.getEventLogStats);
+
 module.exports = router;

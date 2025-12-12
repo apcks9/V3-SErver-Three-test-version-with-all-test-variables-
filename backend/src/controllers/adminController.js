@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Payment = require('../models/Payment');
+const EventLog = require('../models/EventLog');
 
 /**
  * Admin Dashboard - Get statistics
@@ -852,6 +853,131 @@ exports.getPlanDistribution = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: planDistribution
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get event logs for debugging webhooks and payment flow
+ */
+exports.getEventLogs = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      eventType,
+      status,
+      source,
+      userId,
+      startDate,
+      endDate
+    } = req.query;
+
+    const query = {};
+
+    if (eventType) {
+      query.eventType = { $regex: eventType, $options: 'i' };
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (source) {
+      query.source = source;
+    }
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await EventLog.countDocuments(query);
+
+    const logs = await EventLog.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / parseInt(limit)),
+          totalLogs: total,
+          perPage: parseInt(limit)
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get event log statistics
+ */
+exports.getEventLogStats = async (req, res, next) => {
+  try {
+    // Events by type
+    const eventsByType = await EventLog.aggregate([
+      {
+        $group: {
+          _id: '$eventType',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Events by status
+    const eventsByStatus = await EventLog.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Recent failures
+    const recentFailures = await EventLog.find({ status: 'failed' })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Events in last 24 hours
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentCount = await EventLog.countDocuments({
+      createdAt: { $gte: yesterday }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        eventsByType,
+        eventsByStatus: eventsByStatus.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}),
+        recentFailures,
+        eventsLast24Hours: recentCount
+      }
     });
   } catch (error) {
     next(error);
